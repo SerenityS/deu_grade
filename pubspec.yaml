@@ -1,5 +1,5 @@
 name: deu_grade
-description: A new Flutter project.
+description: DEU Grade
 
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -30,10 +30,15 @@ dependencies:
   flutter:
     sdk: flutter
 
+  fluttertoast:
+  get:
+  html:
+  pull_to_refresh:
 
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^1.0.2
+  requests:
+    git:
+      url: https://github.com/ianmaciel/requests
+      ref: feature/null-safety
 
 dev_dependencies:
   flutter_test:
