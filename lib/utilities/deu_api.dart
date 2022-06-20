@@ -2,13 +2,9 @@ import 'dart:convert';
 
 import 'package:html/parser.dart' as parser;
 import 'package:html/dom.dart' as dom;
-// ignore: import_of_legacy_library_into_null_safe
 import 'package:requests/requests.dart';
 
 class DEUApi {
-  final String year = '2021';
-  final String smt = '20';
-
   Future postSmartAppLogin(id, pw) async {
     String appLoginUrl = 'https://smartdeu.deu.ac.kr/applogin.do';
 
@@ -34,8 +30,18 @@ class DEUApi {
   }
 
   Future getGradeList() async {
+    var r = await Requests.get('https://smartdeu.deu.ac.kr/introPage.do');
+
+    dom.Document d = parser.parse(r.content());
+
+    var doc = d.getElementById('frm');
+    var yrSmtData = doc?.getElementsByTagName('input');
+
+    var year = yrSmtData![0].attributes['value']!;
+    var smt = yrSmtData[1].attributes['value']!;
+
     String url =
-        'https://smartdeu.deu.ac.kr/viewProcess/stud/d/DM01_D001.do?year=2021&smt=20&menuCd=300023&spNm=Up_App_Usb0301q_Check&spNm=Up_App_Usb0301q';
+        'https://smartdeu.deu.ac.kr/viewProcess/stud/d/DM01_D001.do?year=$year&smt=$smt&menuCd=300023&spNm=Up_App_Usb0301q_Check&spNm=Up_App_Usb0301q';
 
     var response = await Requests.get(
       url,
@@ -43,7 +49,6 @@ class DEUApi {
         'Accept': '*/*',
       },
     );
-
     dom.Document document = parser.parse(response.content());
 
     var gradeDate = document.getElementsByClassName('title');
@@ -51,11 +56,7 @@ class DEUApi {
 
     var gradeList = [];
     for (var i = 0; i < gradeDate.length; i++) {
-      gradeList.add([
-        gradeDate[i].text.trim(),
-        gradeData[i].getElementsByTagName('dt'),
-        gradeData[i].getElementsByTagName('dd')
-      ]);
+      gradeList.add([gradeDate[i].text.trim(), gradeData[i].getElementsByTagName('dt'), gradeData[i].getElementsByTagName('dd')]);
       gradeList[i][1].removeRange(0, 3);
       gradeList[i][2].removeRange(0, 3);
     }
