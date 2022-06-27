@@ -30,6 +30,7 @@ dependencies:
   flutter:
     sdk: flutter
 
+  background_fetch:
   fluttertoast:
   get:
   html:
