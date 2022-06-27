@@ -1,3 +1,4 @@
+import 'package:background_fetch/background_fetch.dart';
 import 'package:flutter/material.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import '../utilities/deu_api.dart';
@@ -8,8 +9,8 @@ class ScoreListScreen extends StatefulWidget {
 }
 
 class _ScoreListScreenState extends State<ScoreListScreen> {
-  final RefreshController _refreshController =
-      RefreshController(initialRefresh: false);
+  bool _enabled = true;
+  final RefreshController _refreshController = RefreshController(initialRefresh: false);
 
   void _onRefresh() async {
     setState(() {});
@@ -24,14 +25,61 @@ class _ScoreListScreenState extends State<ScoreListScreen> {
     _refreshController.loadComplete();
   }
 
+  Future<void> initPlatformState() async {
+    // Configure BackgroundFetch.
+    int status = await BackgroundFetch.configure(
+        BackgroundFetchConfig(
+            minimumFetchInterval: 1,
+            startOnBoot: true,
+            stopOnTerminate: false,
+            forceAlarmManager: true,
+            enableHeadless: true,
+            requiresBatteryNotLow: false,
+            requiresCharging: false,
+            requiresStorageNotLow: false,
+            requiresDeviceIdle: false,
+            requiredNetworkType: NetworkType.NONE), (String taskId) async {
+      print("[BackgroundFetch] Event received $taskId");
+      await DEUApi().checkGradeList();
+      // IMPORTANT:  You must signal completion of your task or the OS can punish your app
+      // for taking too long in the background.
+      BackgroundFetch.finish(taskId);
+    }, (String taskId) async {
+      // <-- Task timeout handler.
+      // This task has exceeded its allowed running-time.  You must stop what you're doing and immediately .finish(taskId)
+      print("[BackgroundFetch] TASK TIMEOUT taskId: $taskId");
+      BackgroundFetch.finish(taskId);
+    });
+    print('[BackgroundFetch] configure success: $status');
+    setState(() {});
+
+    // If the widget was removed from the tree while the asynchronous platform
+    // message was in flight, we want to discard the reply rather than calling
+    // setState to update our non-existent appearance.
+    if (!mounted) return;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    initPlatformState();
+
+    if (_enabled) {
+      BackgroundFetch.start().then((int status) {
+        print('[BackgroundFetch] start success: $status');
+      }).catchError((e) {
+        print('[BackgroundFetch] start FAILURE: $e');
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
           '금학기 성적 조회',
-          style: TextStyle(
-              fontSize: 22, fontWeight: FontWeight.w700, color: Colors.black),
+          style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Colors.black),
         ),
       ),
       body: FutureBuilder(
@@ -85,8 +133,7 @@ class _ScoreListScreenState extends State<ScoreListScreen> {
                             itemCount: snapshot.data[index][1].length,
                             itemBuilder: (context, idx) {
                               return ListTile(
-                                title: Text(
-                                    '${snapshot.data[index][1][idx].text} : ${snapshot.data[index][2][idx].text}'),
+                                title: Text('${snapshot.data[index][1][idx].text} : ${snapshot.data[index][2][idx].text}'),
                               );
                             },
                             separatorBuilder: (context, index) {

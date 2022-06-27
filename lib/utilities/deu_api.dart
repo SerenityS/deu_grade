@@ -3,8 +3,11 @@ import 'dart:convert';
 import 'package:html/parser.dart' as parser;
 import 'package:html/dom.dart' as dom;
 import 'package:requests/requests.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class DEUApi {
+  late SharedPreferences _prefs;
+
   Future postSmartAppLogin(id, pw) async {
     String appLoginUrl = 'https://smartdeu.deu.ac.kr/applogin.do';
 
@@ -61,5 +64,20 @@ class DEUApi {
       gradeList[i][2].removeRange(0, 3);
     }
     return gradeList;
+  }
+
+  Future checkGradeList() async {
+    _prefs = await SharedPreferences.getInstance();
+    var gradeList = await getGradeList();
+    for (var grade in gradeList) {
+      var name = grade[0];
+      var score = grade[2][4].text;
+
+      var old_score = _prefs.getString(name);
+      if (old_score != score) {
+        _prefs.setString(name, score);
+        print("$name 성적 정보 변경됨");
+      }
+    }
   }
 }
